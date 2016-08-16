@@ -1,6 +1,6 @@
 #!flask/bin/python
 
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_restful import Resource, Api
 import petl, json, logging, io, sys, os, csv
 
@@ -49,12 +49,12 @@ def create_app():
 		
 		def generate():
 			#columns = petl.util.base.header(table)
-			for row in petl.util.base.dicts(table):
+			data = petl.convertnumbers(table)
+			for row in petl.util.base.dicts(data):
 				#Process blades here
-				yield json.dumps(row)
+				print(row)
+				yield json.dumps(row)+'\n'
 		return Response(generate(), mimetype='application/json')
-
-		
 
 	#api.add_resource(treeView.dataTree, '/<tree_name>/')
 	

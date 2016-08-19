@@ -58,4 +58,4 @@ target/
 
 #Misc
 config/config.py
-blades/*.py
+blades/blade_exv_*

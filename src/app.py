@@ -13,6 +13,9 @@ type_supported = {'csv':petl.io.csv.fromcsv,
   'xlsx':petl.io.xlsx.fromxlsx,
   }
 
+blades = {'pre':list(),
+			'post':list()}
+
 
 def create_app():
 
@@ -37,6 +40,7 @@ def create_app():
 		data = json.loads(request.data.decode('utf-8'))
 		url = data.get('url', None)
 		ftype = data.get("type", None)
+		meta = data.get("meta", None)
 		#Is url valid?
 
 
@@ -46,19 +50,31 @@ def create_app():
 
 		#Grab file from url
 		table = type_supported[ftype](url)
+		#Process PETL specific blades here
+		for b in blades['pre']:
+			table = b.run(table, meta)
 		
 		def generate():
 			#columns = petl.util.base.header(table)
 			data = petl.convertnumbers(table)
 			for row in petl.util.base.dicts(data):
 				#Process blades here
-				print(row)
+				for b in blades['post']:
+					row = b.run(row, meta)
+
 				yield json.dumps(row)+'\n'
 		return Response(generate(), mimetype='application/json')
 
 	#api.add_resource(treeView.dataTree, '/<tree_name>/')
 	
 	app.config.from_pyfile(os.path.dirname('../config/config.py')+'/../config/config.py')
+
+	#Load Blades
+	for blade in app.config['BLADES']:
+		b = __import__('blades.'+blade['path'], fromlist=[blade['name']])
+		active_blade = getattr(b, blade['name'])()
+		blades[active_blade.getStage()].append(active_blade)
+
 
 	#@app.before_request
     #	def write_access_log():
